@@ -1,0 +1,11 @@
+.build/
+.swiftpm/
+*.xcuserstate
+xcuserdata/
+DerivedData/
+*.moved-aside
+*.pbxuser
+.DS_Store
+dist/
+website/node_modules/
+website/dist/

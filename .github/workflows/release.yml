@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-dmg:
+    runs-on: macos-15
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Get version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build DMG
+        run: |
+          chmod +x scripts/build-dmg.sh
+          bash scripts/build-dmg.sh "${{ steps.version.outputs.version }}"
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "MixMate ${{ github.ref_name }}"
+          body: |
+            ## MixMate ${{ github.ref_name }}
+
+            Per-app volume control for macOS.
+
+            ### Install
+            1. Download `MixMate-${{ steps.version.outputs.version }}.dmg`
+            2. Open the DMG and drag MixMate to your Applications folder
+            3. Launch MixMate — a speaker icon will appear in your menu bar
+            4. Grant microphone access when prompted
+
+            **Requires macOS Sonoma 14.2 or later.**
+          files: "MixMate-${{ steps.version.outputs.version }}.dmg"

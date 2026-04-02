@@ -33,7 +33,12 @@ jobs:
           body: |
             ## MixMate ${{ github.ref_name }}
 
-            Per-app volume control for macOS.
+            Per-app volume control for macOS. Lives in your menu bar.
+
+            ### What's new in 1.1.0
+            - **Chrome & Electron app support** — helper/renderer processes (Chrome, Slack, Discord, VS Code…) now appear correctly with the right name and icon
+            - **Fixed audio distortion** — IOProc buffer corruption on non-interleaved (multi-buffer) audio streams caused crackling; fixed with proper pointer arithmetic
+            - **Fixed Gatekeeper "damaged" error** — app is now ad-hoc signed so macOS shows the standard "unidentified developer" prompt instead
 
             ### Install
             1. Download `MixMate-${{ steps.version.outputs.version }}.dmg`

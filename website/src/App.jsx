@@ -1,3 +1,4 @@
+// v1.0.1
 import Nav from './components/Nav'
 import Hero from './components/Hero'
 import Features from './components/Features'

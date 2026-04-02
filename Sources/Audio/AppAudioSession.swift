@@ -148,19 +148,33 @@ final class AppAudioSession: ObservableObject, Identifiable {
             let session = Unmanaged<AppAudioSession>.fromOpaque(ctx).takeUnretainedValue()
             let vol = session._ioVolume
 
-            let numBuffers = Int(inInputData.pointee.mNumberBuffers)
-            withUnsafePointer(to: inInputData.pointee.mBuffers) { srcBufsPtr in
-                withUnsafeMutablePointer(to: &outOutputData.pointee.mBuffers) { dstBufsPtr in
-                    let srcBufs = UnsafeBufferPointer(start: srcBufsPtr, count: numBuffers)
-                    let dstBufs = UnsafeMutableBufferPointer(start: dstBufsPtr, count: numBuffers)
-                    for i in 0..<numBuffers {
-                        guard let srcData = srcBufs[i].mData,
-                              let dstData = dstBufs[i].mData else { continue }
-                        let count = Int(srcBufs[i].mDataByteSize) / MemoryLayout<Float32>.size
-                        let src = srcData.bindMemory(to: Float32.self, capacity: count)
-                        let dst = dstData.bindMemory(to: Float32.self, capacity: count)
-                        for j in 0..<count { dst[j] = src[j] * vol }
-                    }
+            // Use raw pointer arithmetic to walk the AudioBufferList in-place.
+            // withUnsafePointer(to: abl.mBuffers) copies only the first element,
+            // so accessing beyond index 0 would read garbage for non-interleaved audio.
+            let ablOffset = MemoryLayout<AudioBufferList>.offset(of: \.mBuffers)!
+            let srcBuf = UnsafeRawPointer(inInputData).advanced(by: ablOffset)
+                .assumingMemoryBound(to: AudioBuffer.self)
+            let dstBuf = UnsafeMutableRawPointer(mutating: outOutputData).advanced(by: ablOffset)
+                .assumingMemoryBound(to: AudioBuffer.self)
+
+            let numIn  = Int(inInputData.pointee.mNumberBuffers)
+            let numOut = Int(outOutputData.pointee.mNumberBuffers)
+
+            for i in 0..<numOut {
+                guard let dstData = dstBuf[i].mData else { continue }
+                let dstCount = Int(dstBuf[i].mDataByteSize) / MemoryLayout<Float32>.size
+                let dstPtr = dstData.assumingMemoryBound(to: Float32.self)
+
+                if i < numIn, let srcData = srcBuf[i].mData {
+                    let srcCount = Int(srcBuf[i].mDataByteSize) / MemoryLayout<Float32>.size
+                    let srcPtr = srcData.assumingMemoryBound(to: Float32.self)
+                    let n = min(srcCount, dstCount)
+                    for j in 0..<n { dstPtr[j] = srcPtr[j] * vol }
+                    // Zero any extra output samples this buffer didn't cover
+                    if n < dstCount { dstPtr.advanced(by: n).update(repeating: 0, count: dstCount - n) }
+                } else {
+                    // No corresponding input buffer — silence
+                    dstPtr.update(repeating: 0, count: dstCount)
                 }
             }
             return noErr

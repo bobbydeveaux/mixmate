@@ -31,22 +31,42 @@ final class AppAudioSession: ObservableObject, Identifiable {
         self.id = pid
         self.bundleID = bundleID
 
+        let runningApp = NSRunningApplication(processIdentifier: pid)
+
         if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            // Known app with a registered bundle ID
             let bundle = Bundle(url: url)
             appName = bundle?.infoDictionary?["CFBundleDisplayName"] as? String
                    ?? bundle?.infoDictionary?["CFBundleName"] as? String
+                   ?? runningApp?.localizedName
                    ?? bundleID.components(separatedBy: ".").last?.capitalized
                    ?? bundleID
             appIcon = NSWorkspace.shared.icon(forFile: url.path)
+        } else if let execURL = runningApp?.executableURL {
+            // Helper / renderer process — walk up to the nearest .app bundle for name + icon
+            var appURL: URL? = nil
+            var current = execURL
+            while current.pathComponents.count > 1 {
+                current = current.deletingLastPathComponent()
+                if current.pathExtension == "app" { appURL = current; break }
+            }
+            if let appURL {
+                let bundle = Bundle(url: appURL)
+                appName = bundle?.infoDictionary?["CFBundleDisplayName"] as? String
+                       ?? bundle?.infoDictionary?["CFBundleName"] as? String
+                       ?? runningApp?.localizedName
+                       ?? appURL.deletingPathExtension().lastPathComponent
+                appIcon = NSWorkspace.shared.icon(forFile: appURL.path)
+            } else {
+                appName = runningApp?.localizedName
+                       ?? execURL.deletingPathExtension().lastPathComponent.capitalized
+                appIcon = runningApp?.icon ?? NSImage(systemSymbolName: "app.fill", accessibilityDescription: nil) ?? NSImage()
+            }
         } else {
-            let runningApp = NSRunningApplication(processIdentifier: pid)
             appName = runningApp?.localizedName
                    ?? bundleID.components(separatedBy: ".").last?.capitalized
                    ?? bundleID
-            appIcon = runningApp?.icon ?? NSImage(
-                systemSymbolName: "app.fill",
-                accessibilityDescription: nil
-            ) ?? NSImage()
+            appIcon = runningApp?.icon ?? NSImage(systemSymbolName: "app.fill", accessibilityDescription: nil) ?? NSImage()
         }
     }
 

@@ -143,9 +143,9 @@ final class AudioProcessManager: ObservableObject {
             // Check if the process is running and has audio
             guard isProcessRunning(objectID) else { continue }
 
-            // Get bundle ID
+            // Get bundle ID — helper processes (e.g. Chrome renderer) may have none,
+            // so fall back to a pid-based identifier so they still get tapped.
             let bundleID = getBundleID(for: objectID) ?? inferBundleID(for: pid)
-            guard !bundleID.isEmpty else { continue }
 
             // Only include processes that are actually playing audio
             if isPlayingAudio(objectID: objectID, pid: pid) {
@@ -229,6 +229,11 @@ final class AudioProcessManager: ObservableObject {
     }
 
     private func inferBundleID(for pid: pid_t) -> String {
-        NSRunningApplication(processIdentifier: pid)?.bundleIdentifier ?? ""
+        if let id = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier, !id.isEmpty {
+            return id
+        }
+        // For helper processes (e.g. Chrome renderer) that aren't registered as
+        // NSRunningApplication entries, fall back to a stable pid-based key.
+        return "pid.\(pid)"
     }
 }

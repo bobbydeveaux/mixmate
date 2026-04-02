@@ -52,9 +52,21 @@ export default function Download() {
               </a>
             </div>
 
-            <p style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+            <p style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 16 }}>
               Requires macOS Sonoma 14.2 or later · MIT License · No telemetry
             </p>
+
+            <div style={{
+              background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-bright)',
+              borderRadius: 10, padding: '12px 16px', maxWidth: 420, margin: '0 auto',
+              textAlign: 'left',
+            }}>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.7 }}>
+                <span style={{ color: 'var(--text)', fontWeight: 600 }}>First launch:</span>{' '}
+                macOS may warn the app is from an unidentified developer. Right-click (or Control-click){' '}
+                MixMate.app and choose <span style={{ color: 'var(--text)', fontWeight: 500 }}>Open</span> to bypass Gatekeeper.
+              </p>
+            </div>
           </div>
         </div>
       </div>

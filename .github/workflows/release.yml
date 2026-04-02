@@ -38,8 +38,8 @@ jobs:
             ### Install
             1. Download `MixMate-${{ steps.version.outputs.version }}.dmg`
             2. Open the DMG and drag MixMate to your Applications folder
-            3. Launch MixMate — a speaker icon will appear in your menu bar
-            4. Grant microphone access when prompted
+            3. **First launch:** right-click MixMate.app → Open (Gatekeeper workaround for unsigned builds)
+            4. Grant microphone access when prompted — required for the audio tap API
 
             **Requires macOS Sonoma 14.2 or later.**
           files: "MixMate-${{ steps.version.outputs.version }}.dmg"

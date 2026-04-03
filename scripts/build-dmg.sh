@@ -30,7 +30,9 @@ sed "s/\$(EXECUTABLE_NAME)/$APP_NAME/g" "MixMate/Info.plist" \
 chmod +x "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 
 echo "→ Ad-hoc signing (prevents Gatekeeper 'damaged' error)"
-codesign --force --deep --sign - "$APP_BUNDLE"
+codesign --force --deep --sign - \
+  --entitlements "MixMate/MixMate.entitlements" \
+  "$APP_BUNDLE"
 
 echo "→ Creating DMG"
 rm -f "$DMG_NAME"
